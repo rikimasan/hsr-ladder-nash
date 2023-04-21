@@ -14,3 +14,7 @@ Get stats .json files from hsreplay.net by doing the following:
 - visit this [link](https://hsreplay.net/analytics/query/head_to_head_archetype_matchups_v2/?GameType=RANKED_STANDARD&LeagueRankRange=LEGEND&Region=ALL&TimeRange=CURRENT_PATCH) for matchups.json
 
 The second link needs hsreplay premium, since it fetches legend stats for the current patch, you can get alternative stats by going to the website and looking in the browser debugger for the fetching http request with the stats filters you have selected. I wouldn't use anything below legend stats though. Top 1k is usually too sparse data leaving some decks unseen.
+
+Create a virtual environment if you want then `pip install numpy`
+
+Run the program with `python main.py`
