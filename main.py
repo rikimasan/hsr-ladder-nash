@@ -12,12 +12,13 @@ with open('data/archetypes.json', 'r') as f:
 with open('data/matchups.json', 'r') as f:
     matchups = json.load(f)["series"]
 
-# get a list of deck_ids with a significant number of games
-real_deck_ids = list()
-for deck_id in matchups["metadata"]:
-    if matchups["metadata"][deck_id]["total_games"] > 5000:
-        real_deck_ids.append(deck_id)
-real_deck_ids = real_deck_ids[:-1]
+total_games = matchups["metadata"]["totals"]["total_games"]
+# get a list of deck_ids with a significant number of games and ensure deck_ids are not negative or non-numeric
+real_deck_ids = [deck_id 
+                 for deck_id in matchups["metadata"] 
+                 if deck_id.isdigit() 
+                 and int(deck_id) >= 0 
+                 and matchups["metadata"][deck_id]["total_games"] / total_games > 0.01]
 
 #sort real_deck_ids by archetypes[deck_id]["player_class"]
 real_deck_ids = sorted(real_deck_ids, key=lambda deck_id: archetypes[deck_id]["player_class"])
@@ -45,7 +46,7 @@ with open('matchup_table.csv', 'w', newline='') as csvfile:
 # filter classes from deck_ids
 temp = list()
 for deck_id in real_deck_ids:
-    if archetypes[deck_id]["player_class_name"] not in ["PRIEST", "DEATHKNIGHT", "ROGUE"]:
+    if archetypes[deck_id]["player_class_name"] not in []:
         temp.append(deck_id)
 real_deck_ids = temp
 
@@ -63,7 +64,7 @@ for deck_id in real_deck_ids:
 
 # iterate popularity distribution from estimated winrates
 std_dev = 1
-while std_dev > 0.05:
+while std_dev > 0.0325:
     # calculate estimated winrates of decks with current probability distribution
     estimated_winrates = dict()
     for deck_id in real_deck_ids:
@@ -74,7 +75,7 @@ while std_dev > 0.05:
             popularity_total += popularity_distribution[matchup]
         estimated_wr /= popularity_total
         estimated_winrates[deck_id] = estimated_wr
-    
+
     played_estimated_winrates = list()
     for deck_id, popularity in popularity_distribution.items():
         if popularity > 0:
@@ -89,6 +90,7 @@ while std_dev > 0.05:
         if estimated_winrates[deck_id] < mean - std_dev and popularity_distribution[deck_id] > 0:
             popularity_distribution[deck_id] -= 1
 
-for deck_id, popularity in popularity_distribution.items():
+sorted_decks = sorted(((deck_id, popularity, estimated_winrates[deck_id]) for deck_id, popularity in popularity_distribution.items()), key=lambda x: x[1], reverse=True)
+for deck_id, popularity, ewr in sorted_decks:
     if popularity > 0:
-        print("{}: {} (EWR: {})".format(archetypes[deck_id]["name"], popularity, estimated_winrates[deck_id]))
+        print(f"{archetypes[deck_id]['name']}: {popularity} (EWR: {ewr:.2f})")
